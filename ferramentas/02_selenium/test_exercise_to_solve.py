@@ -1,22 +1,42 @@
-import random
 import pathlib
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from time import sleep
+from selenium.webdriver import ChromeOptions
+import unittest
 
 
-def test_sample_page():
-    file_path = pathlib.Path(__file__).parent.resolve()
-    driver = webdriver.Chrome()
-    driver.get(f"file:////{file_path}/sample.html")
-    title = driver.title
-    assert title == "Web form"
-    driver.implicitly_wait(0.5)
-    text_box = driver.find_element(by=By.NAME, value="input")
-    submit_button = driver.find_element(by=By.CSS_SELECTOR, value="button")
-    text = ["cheese", "selenium", "test", "bla", "foo"]
-    text_box.send_keys(text[random.randrange(len(text))])
-    submit_button.click()
-    message = driver.find_element(by=By.ID, value="result")
-    value = message.text
-    assert value == "It workls! Selenium!"
-    driver.quit()
+class TestStringMethods(unittest.TestCase):
+    def test_sample_page(self):
+        file_path = pathlib.Path(__file__).parent.resolve()
+
+        options = ChromeOptions()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        driver = webdriver.Chrome(options=options)
+
+        driver.get(f"file:////{file_path}/sample-exercise_.html")
+        self.generate_code(driver)
+        sleep(5)
+        code = driver.find_element(By.ID, "my-value")
+        input = driver.find_element(By.ID, "input")
+        input.clear()
+        input.send_keys(code.text)
+        test_bnt = driver.find_element(By.NAME, "button")
+        test_bnt.click()
+
+        alert = driver.switch_to.alert
+        alert.accept()
+
+        result = driver.find_element(By.ID, "result")
+        assert result.text == f"It workls! {code.text}!"
+
+        driver.quit()
+
+    def generate_code(self, driver):
+        generate = driver.find_element(By.NAME, "generate")
+        generate.click()
+
+
+if __name__ == "__main__":
+    unittest.main()
