@@ -1,42 +1,60 @@
+import time
 import pathlib
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from time import sleep
+from selenium.webdriver.common.alert import Alert
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ChromeOptions
-import unittest
 
+# Configurar o WebDriver para o Chrome no Windows
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+options = ChromeOptions()
+options.add_argument("--headless")
+options.add_argument("--no-sandbox")
 
-class TestStringMethods(unittest.TestCase):
-    def test_sample_page(self):
-        file_path = pathlib.Path(__file__).parent.resolve()
+def testa():
+    # localiza o HTML na mesma pasta do script usando pathlib
+    file_path = pathlib.Path(__file__).parent.resolve()
+    driver.get(f"file:////{file_path}/sample-exercise_.html")
 
-        options = ChromeOptions()
-        options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        driver = webdriver.Chrome(options=options)
+    # localiza e clica no botão "generate"
+    driver.find_element(By.NAME, "generate").click()
 
-        driver.get(f"file:////{file_path}/sample-exercise_.html")
-        self.generate_code(driver)
-        sleep(5)
-        code = driver.find_element(By.ID, "my-value")
-        input = driver.find_element(By.ID, "input")
-        input.clear()
-        input.send_keys(code.text)
-        test_bnt = driver.find_element(By.NAME, "button")
-        test_bnt.click()
+    # espera que o código gerado possa ser visto e bota ele na variavel codigo
+    espera = WebDriverWait(driver, 10).until(
+        EC.visibility_of_element_located((By.ID, "my-value"))
+    )
+    codigo = espera.text
 
-        alert = driver.switch_to.alert
-        alert.accept()
+    # coloca no campo de texto o código capturado
+    campo_texto = driver.find_element(By.ID, "input")
+    campo_texto.clear()
+    campo_texto.send_keys(codigo)
 
-        result = driver.find_element(By.ID, "result")
-        assert result.text == f"It workls! {code.text}!"
+    # clica no botão "test"
+    driver.find_element(By.NAME, "button").click()
 
-        driver.quit()
+    # fecha o alerta done
+    alerta = Alert(driver)
+    alerta.accept()
 
-    def generate_code(self, driver):
-        generate = driver.find_element(By.NAME, "generate")
-        generate.click()
+    # verifica a mensagem exibida
+    mensagem = driver.find_element(By.ID, "result").text
+    mensagem_esperada = f"It works! {codigo}!"
 
+    #valida se teste passou ou falhou
+    if mensagem == mensagem_esperada: 
+        print("Teste OK ✔!")
+    else:
+        print("Teste falhou ❌!")
 
-if __name__ == "__main__":
-    unittest.main()
+# executa o teste 3x por pedido do professor
+for a in range(3):
+    testa()
+    time.sleep(3)  
+
+# fecha o chrome
+driver.quit()
